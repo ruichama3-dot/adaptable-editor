@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
+import { InstallPwaButton } from "@/components/InstallPwaButton";
 import {
   Plus,
   FileText,
@@ -123,7 +124,18 @@ function Painel() {
         </div>
       </div>
 
+      <section className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-card p-5 shadow-soft">
+        <div>
+          <p className="font-semibold">Instalar a RuJe IA no seu telemóvel</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Fica com o ícone no ecrã principal, abre mais rápido e continua com a sessão iniciada.
+          </p>
+        </div>
+        <InstallPwaButton />
+      </section>
+
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
+
         {stats.map((s) => (
           <div key={s.label} className="shadow-soft rounded-2xl border border-border bg-card p-5">
             <div className="text-muted-foreground flex items-center gap-2 text-sm">
