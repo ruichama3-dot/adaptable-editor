@@ -57,109 +57,125 @@ function startOfTodayISO() {
   return d.toISOString();
 }
 
-const DEFAULT_GEMINI_KEY = "AQ.Ab8RN6L1wPvBFqHAyZYqGi948wEy-lI8K79IgCpMf2JVEakYeg";
+/** Modelos reais da API pública do Google Gemini, por ordem de preferência. */
+const GEMINI_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-pro",
+];
 
-async function callAI(prompt: string): Promise<string> {
-  const geminiKey =
-    process.env["GEMINI_API_KEY"] ||
-    process.env["GOOGLE_API_KEY"] ||
-    (process.env["LOVABLE_API_KEY"]?.startsWith("AQ.") || process.env["LOVABLE_API_KEY"]?.startsWith("AIza")
-      ? process.env["LOVABLE_API_KEY"]
-      : "") ||
-    DEFAULT_GEMINI_KEY;
+function readGeminiKey(): string {
+  const candidates = [
+    process.env["GEMINI_API_KEY"],
+    process.env["GOOGLE_API_KEY"],
+    process.env["GOOGLE_GENERATIVE_AI_API_KEY"],
+    process.env["VITE_GEMINI_API_KEY"],
+  ];
+  for (const c of candidates) {
+    const v = c?.trim();
+    if (v) return v;
+  }
+  // Algumas instalações guardam a chave Gemini dentro de LOVABLE_API_KEY.
+  const lovable = process.env["LOVABLE_API_KEY"]?.trim();
+  if (lovable && (lovable.startsWith("AIza") || lovable.startsWith("AQ."))) return lovable;
+  return "";
+}
 
-  if (geminiKey) {
-    // Modelos Google Gemini com fallback automático em caso de sobrecarga (503/429/404)
-    const models = ["gemini-3.5-flash", "gemini-3.6-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"];
-    let lastError: Error | null = null;
+async function callGemini(prompt: string, apiKey: string): Promise<string> {
+  const errors: string[] = [];
 
-    for (const model of models) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
-        const res = await fetch(url, {
+  for (const model of GEMINI_MODELS) {
+    try {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 8192,
-            },
+            generationConfig: { temperature: 0.7, maxOutputTokens: 8192 },
           }),
-        });
+        },
+      );
 
-        if (!res.ok) {
-          const errText = await res.text().catch(() => "");
-          if (res.status === 503 || res.status === 429 || res.status === 404) {
-            lastError = new Error(`Modelo ${model} indisponível (${res.status}): ${errText}`);
-            continue;
-          }
-          throw new Error(`Falha na geração com Gemini (${res.status}): ${errText}`);
+      if (!res.ok) {
+        const errText = (await res.text().catch(() => "")).slice(0, 300);
+        if (res.status === 400 || res.status === 401 || res.status === 403) {
+          throw new Error(
+            "A chave da API Gemini é inválida ou não tem permissões. Verifique a variável GEMINI_API_KEY no seu projecto (e na Vercel).",
+          );
         }
-
-        const data = (await res.json()) as {
-          candidates?: { content?: { parts?: { text?: string }[] } }[];
-        };
-        const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
-        if (text.trim()) {
-          return text;
-        }
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
+        errors.push(`${model}: ${res.status} ${errText}`);
         continue;
       }
-    }
 
-    if (lastError) {
-      console.warn("Aviso na tentativa com modelos Gemini:", lastError.message);
-    }
-  }
-
-  // Fallback para Lovable Gateway caso configurado e diferente da chave Gemini
-  const lovableApiKey = process.env["LOVABLE_API_KEY"];
-  if (lovableApiKey && !lovableApiKey.startsWith("AQ.") && !lovableApiKey.startsWith("AIza")) {
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": lovableApiKey },
-      body: JSON.stringify({
-        model: "google/gemini-3.8-flash",
-        stream: true,
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
-
-    if (res.ok && res.body) {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let content = "";
-      for (;;) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed.startsWith("data:")) continue;
-          const payload = trimmed.slice(5).trim();
-          if (payload === "[DONE]") continue;
-          try {
-            const json = JSON.parse(payload) as {
-              choices?: { delta?: { content?: string } }[];
-            };
-            content += json.choices?.[0]?.delta?.content ?? "";
-          } catch {
-            /* ignore partial chunks */
-          }
-        }
-      }
-      if (content.trim()) return content;
+      const data = (await res.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      if (text.trim()) return text;
+      errors.push(`${model}: resposta vazia`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      if (message.startsWith("A chave da API Gemini")) throw err;
+      errors.push(`${model}: ${message}`);
     }
   }
 
-  throw new Error("Não foi possível comunicar com o serviço de IA. Tente novamente dentro de instantes.");
+  console.error("[IA] Falha em todos os modelos Gemini:", errors.join(" | "));
+  return "";
 }
+
+async function callLovableGateway(prompt: string, apiKey: string): Promise<string> {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Lovable-API-Key": apiKey },
+    body: JSON.stringify({
+      model: "google/gemini-3-flash",
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = (await res.text().catch(() => "")).slice(0, 300);
+    if (res.status === 429) throw new Error("Demasiados pedidos em simultâneo. Tente novamente dentro de instantes.");
+    if (res.status === 402) throw new Error("Créditos de IA esgotados. Recarregue para continuar a gerar trabalhos.");
+    console.error("[IA] Falha no gateway:", res.status, errText);
+    return "";
+  }
+
+  const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+  return data.choices?.[0]?.message?.content ?? "";
+}
+
+async function callAI(prompt: string): Promise<string> {
+  const geminiKey = readGeminiKey();
+  const lovableKey = process.env["LOVABLE_API_KEY"]?.trim();
+  const gatewayKey =
+    lovableKey && !lovableKey.startsWith("AIza") && !lovableKey.startsWith("AQ.") ? lovableKey : "";
+
+  if (!geminiKey && !gatewayKey) {
+    throw new Error(
+      "Nenhuma chave de IA configurada. Adicione a variável GEMINI_API_KEY nas definições do projecto (e na Vercel) e tente novamente.",
+    );
+  }
+
+  if (geminiKey) {
+    const text = await callGemini(prompt, geminiKey);
+    if (text.trim()) return text;
+  }
+
+  if (gatewayKey) {
+    const text = await callLovableGateway(prompt, gatewayKey);
+    if (text.trim()) return text;
+  }
+
+  throw new Error(
+    "O serviço de IA não respondeu. Tente novamente dentro de instantes — se persistir, verifique a chave GEMINI_API_KEY.",
+  );
+}
+
 
 export const generateWork = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
