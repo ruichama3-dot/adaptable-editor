@@ -1,4 +1,4 @@
-const CACHE = "ruje-ia-v1";
+const CACHE = "ruje-ia-v2";
 const ASSETS = ["/", "/manifest.webmanifest", "/favicon.png", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
