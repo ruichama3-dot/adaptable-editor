@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/lib/auth-guard";
 import { z } from "zod";
 import { FREE_DAILY_LIMIT } from "@/lib/plans";
 
@@ -65,21 +65,20 @@ const GEMINI_MODELS = [
   "gemini-2.5-pro",
 ];
 
-function readGeminiKey(): string {
-  const candidates = [
-    process.env["GEMINI_API_KEY"],
-    process.env["GOOGLE_API_KEY"],
-    process.env["GOOGLE_GENERATIVE_AI_API_KEY"],
-    process.env["VITE_GEMINI_API_KEY"],
-  ];
-  for (const c of candidates) {
-    const v = c?.trim();
-    if (v) return v;
-  }
-  // Algumas instalações guardam a chave Gemini dentro de LOVABLE_API_KEY.
-  const lovable = process.env["LOVABLE_API_KEY"]?.trim();
-  if (lovable && (lovable.startsWith("AIza") || lovable.startsWith("AQ."))) return lovable;
-  return "";
+/** Todas as chaves candidatas, lidas apenas do servidor (nunca VITE_*). */
+function readKeys() {
+  const env = (n: string) => process.env[n]?.trim() ?? "";
+  const all = [
+    env("GEMINI_API_KEY"),
+    env("GOOGLE_API_KEY"),
+    env("GOOGLE_GENERATIVE_AI_API_KEY"),
+    env("LOVABLE_API_KEY"),
+  ].filter(Boolean);
+
+  // Chaves da Google AI Studio começam por "AIza"; as do gateway Lovable por "AQ.".
+  const geminiKey = all.find((k) => k.startsWith("AIza")) ?? "";
+  const gatewayKey = all.find((k) => k.startsWith("AQ.")) ?? "";
+  return { geminiKey, gatewayKey };
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
@@ -150,10 +149,7 @@ async function callLovableGateway(prompt: string, apiKey: string): Promise<strin
 }
 
 async function callAI(prompt: string): Promise<string> {
-  const geminiKey = readGeminiKey();
-  const lovableKey = process.env["LOVABLE_API_KEY"]?.trim();
-  const gatewayKey =
-    lovableKey && !lovableKey.startsWith("AIza") && !lovableKey.startsWith("AQ.") ? lovableKey : "";
+  const { geminiKey, gatewayKey } = readKeys();
 
   if (!geminiKey && !gatewayKey) {
     throw new Error(
@@ -178,7 +174,7 @@ async function callAI(prompt: string): Promise<string> {
 
 
 export const generateWork = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
   .handler(async ({ data, context }) => {
     // Administradores têm acesso ilimitado.
