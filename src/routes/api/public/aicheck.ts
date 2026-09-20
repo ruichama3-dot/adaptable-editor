@@ -4,18 +4,18 @@ export const Route = createFileRoute("/api/public/aicheck")({
   server: {
     handlers: {
       GET: async () => {
-        const key = process.env["GEMINI_API_KEY"]?.trim() ?? "";
-        if (!key.startsWith("AIza")) {
-          return Response.json({ ok: false, reason: "no-aiza-key", prefix: key.slice(0, 4) });
-        }
-        const res = await fetch(
-          "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-goog-api-key": key },
-            body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "diz OK" }] }] }),
-          },
-        );
+        const gem = process.env["GEMINI_API_KEY"]?.trim() ?? "";
+        const lov = process.env["LOVABLE_API_KEY"]?.trim() ?? "";
+        const key = [gem, lov].find((k) => k.startsWith("AQ.")) ?? "";
+        if (!key) return Response.json({ ok: false, reason: "no-gateway-key" });
+        const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+          body: JSON.stringify({
+            model: "google/gemini-3-flash",
+            messages: [{ role: "user", content: "diz OK" }],
+          }),
+        });
         return Response.json({ ok: res.ok, status: res.status, body: (await res.text()).slice(0, 200) });
       },
     },
