@@ -149,10 +149,7 @@ async function callLovableGateway(prompt: string, apiKey: string): Promise<strin
 }
 
 async function callAI(prompt: string): Promise<string> {
-  const geminiKey = readGeminiKey();
-  const lovableKey = process.env["LOVABLE_API_KEY"]?.trim();
-  const gatewayKey =
-    lovableKey && !lovableKey.startsWith("AIza") && !lovableKey.startsWith("AQ.") ? lovableKey : "";
+  const { geminiKey, gatewayKey } = readKeys();
 
   if (!geminiKey && !gatewayKey) {
     throw new Error(
