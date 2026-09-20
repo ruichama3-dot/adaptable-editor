@@ -21,6 +21,7 @@ import { Route as AuthenticatedPlanosRouteImport } from './routes/_authenticated
 import { Route as PartilhaIdRouteImport } from './routes/partilha.$id'
 import { Route as AuthenticatedAmostraIdRouteImport } from './routes/_authenticated/amostra.$id'
 import { Route as AuthenticatedTrabalhoIdRouteImport } from './routes/_authenticated/trabalho.$id'
+import { Route as ApiPublicAicheckRouteImport } from './routes/api/public/aicheck'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -82,6 +83,11 @@ const AuthenticatedTrabalhoIdRoute = AuthenticatedTrabalhoIdRouteImport.update({
   path: '/trabalho/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicAicheckRoute = ApiPublicAicheckRouteImport.update({
+  id: '/api/public/aicheck',
+  path: '/api/public/aicheck',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/partilha/$id': typeof PartilhaIdRoute
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
+  '/api/public/aicheck': typeof ApiPublicAicheckRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/partilha/$id': typeof PartilhaIdRoute
   '/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
+  '/api/public/aicheck': typeof ApiPublicAicheckRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/partilha/$id': typeof PartilhaIdRoute
   '/_authenticated/amostra/$id': typeof AuthenticatedAmostraIdRoute
   '/_authenticated/trabalho/$id': typeof AuthenticatedTrabalhoIdRoute
+  '/api/public/aicheck': typeof ApiPublicAicheckRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/partilha/$id'
     | '/amostra/$id'
     | '/trabalho/$id'
+    | '/api/public/aicheck'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/partilha/$id'
     | '/amostra/$id'
     | '/trabalho/$id'
+    | '/api/public/aicheck'
   id:
     | '__root__'
     | '/'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/partilha/$id'
     | '/_authenticated/amostra/$id'
     | '/_authenticated/trabalho/$id'
+    | '/api/public/aicheck'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -173,6 +185,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   PartilhaIdRoute: typeof PartilhaIdRoute
+  ApiPublicAicheckRoute: typeof ApiPublicAicheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -261,6 +274,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrabalhoIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/aicheck': {
+      id: '/api/public/aicheck'
+      path: '/api/public/aicheck'
+      fullPath: '/api/public/aicheck'
+      preLoaderRoute: typeof ApiPublicAicheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -293,6 +313,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   PartilhaIdRoute: PartilhaIdRoute,
+  ApiPublicAicheckRoute: ApiPublicAicheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
