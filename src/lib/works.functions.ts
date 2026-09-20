@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/lib/auth-guard";
 import { z } from "zod";
 import { FREE_DAILY_LIMIT } from "@/lib/plans";
 
@@ -66,11 +66,11 @@ const GEMINI_MODELS = [
 ];
 
 function readGeminiKey(): string {
+  // Apenas variáveis de servidor — nunca VITE_*, que ficariam expostas no frontend.
   const candidates = [
     process.env["GEMINI_API_KEY"],
     process.env["GOOGLE_API_KEY"],
     process.env["GOOGLE_GENERATIVE_AI_API_KEY"],
-    process.env["VITE_GEMINI_API_KEY"],
   ];
   for (const c of candidates) {
     const v = c?.trim();
@@ -178,7 +178,7 @@ async function callAI(prompt: string): Promise<string> {
 
 
 export const generateWork = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
   .handler(async ({ data, context }) => {
     // Administradores têm acesso ilimitado.
