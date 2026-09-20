@@ -75,9 +75,9 @@ function readKeys() {
     env("LOVABLE_API_KEY"),
   ].filter(Boolean);
 
-  // Chaves da Google AI Studio começam por "AIza"; as do gateway Lovable por "AQ.".
+  // Chaves da Google AI Studio começam por "AIza"; as do gateway Lovable por "sk_".
   const geminiKey = all.find((k) => k.startsWith("AIza")) ?? "";
-  const gatewayKey = all.find((k) => k.startsWith("AQ.")) ?? "";
+  const gatewayKey = all.find((k) => k.startsWith("sk_")) ?? "";
   return { geminiKey, gatewayKey };
 }
 
