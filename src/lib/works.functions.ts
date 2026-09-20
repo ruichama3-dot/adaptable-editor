@@ -65,21 +65,20 @@ const GEMINI_MODELS = [
   "gemini-2.5-pro",
 ];
 
-function readGeminiKey(): string {
-  // Apenas variáveis de servidor — nunca VITE_*, que ficariam expostas no frontend.
-  const candidates = [
-    process.env["GEMINI_API_KEY"],
-    process.env["GOOGLE_API_KEY"],
-    process.env["GOOGLE_GENERATIVE_AI_API_KEY"],
-  ];
-  for (const c of candidates) {
-    const v = c?.trim();
-    if (v) return v;
-  }
-  // Algumas instalações guardam a chave Gemini dentro de LOVABLE_API_KEY.
-  const lovable = process.env["LOVABLE_API_KEY"]?.trim();
-  if (lovable && (lovable.startsWith("AIza") || lovable.startsWith("AQ."))) return lovable;
-  return "";
+/** Todas as chaves candidatas, lidas apenas do servidor (nunca VITE_*). */
+function readKeys() {
+  const env = (n: string) => process.env[n]?.trim() ?? "";
+  const all = [
+    env("GEMINI_API_KEY"),
+    env("GOOGLE_API_KEY"),
+    env("GOOGLE_GENERATIVE_AI_API_KEY"),
+    env("LOVABLE_API_KEY"),
+  ].filter(Boolean);
+
+  // Chaves da Google AI Studio começam por "AIza"; as do gateway Lovable por "AQ.".
+  const geminiKey = all.find((k) => k.startsWith("AIza")) ?? "";
+  const gatewayKey = all.find((k) => k.startsWith("AQ.")) ?? "";
+  return { geminiKey, gatewayKey };
 }
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
