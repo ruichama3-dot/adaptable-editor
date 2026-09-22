@@ -23,6 +23,19 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
+/** Traduz os erros do serviço de contas para linguagem simples. */
+function signupErrorMessage(message: string) {
+  const m = message.toLowerCase();
+  if (m.includes("weak") || m.includes("pwned")) {
+    return "Essa palavra-passe é demasiado comum. Junte um número ou símbolo (ex.: Maputo2026!) e tente de novo.";
+  }
+  if (m.includes("already registered") || m.includes("already been registered")) {
+    return "Já existe uma conta com este e-mail. Entre em vez de criar conta.";
+  }
+  if (m.includes("invalid email")) return "Verifique o endereço de e-mail indicado.";
+  return message;
+}
+
 function AuthPage() {
   const { modo } = Route.useSearch();
   const navigate = useNavigate();
