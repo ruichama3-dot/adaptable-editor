@@ -177,27 +177,46 @@ export const generateWork = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
   .handler(async ({ data, context }) => {
-    // Administradores têm acesso ilimitado.
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+    // Administradores têm acesso ilimitado (com verificação alternativa se o RPC falhar).
+    let isAdmin = false;
+    const { data: roleRpc, error: roleErr } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
+    if (roleErr) {
+      const { data: roleRows } = await context.supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", context.userId)
+        .eq("role", "admin");
+      isAdmin = (roleRows?.length ?? 0) > 0;
+    } else {
+      isAdmin = roleRpc === true;
+    }
 
     if (!isAdmin) {
-      const { data: subs } = await context.supabase
+      const { data: subs, error: subErr } = await context.supabase
         .from("subscriptions")
         .select("daily_limit, expires_at")
+        .eq("user_id", context.userId)
         .gt("expires_at", new Date().toISOString())
         .order("expires_at", { ascending: false })
         .limit(1);
 
-      const limit = subs?.[0]?.daily_limit ?? FREE_DAILY_LIMIT;
+      if (subErr) {
+        throw new Error(
+          "Não foi possível confirmar o seu plano neste momento. Actualize a página e tente de novo.",
+        );
+      }
 
-      if (!subs?.[0]) {
+      const active = subs?.[0];
+      if (!active) {
         throw new Error(
           "Precisa de um plano activo para criar trabalhos. Escolha um plano na página Planos.",
         );
       }
+
+      const limit = active.daily_limit ?? FREE_DAILY_LIMIT;
 
       const { count } = await context.supabase
         .from("works")
@@ -206,7 +225,7 @@ export const generateWork = createServerFn({ method: "POST" })
         .neq("content", "")
         .gte("created_at", startOfTodayISO());
 
-      if ((count ?? 0) >= limit) {
+      if (limit > 0 && (count ?? 0) >= limit) {
         throw new Error(
           `Atingiu o limite de ${limit} trabalhos por dia do seu plano. Tente novamente amanhã.`,
         );
