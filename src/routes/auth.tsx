@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MessageCircle } from "lucide-react";
+import { SignupQuiz } from "@/components/SignupQuiz";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -27,7 +27,7 @@ function AuthPage() {
   const { modo } = Route.useSearch();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [showWhatsApp, setShowWhatsApp] = useState(false);
+  const [showQuiz, setShowQuiz] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -64,9 +64,9 @@ function AuthPage() {
       },
     });
     setLoading(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(signupErrorMessage(error.message)); return; }
     toast.success("Conta criada com sucesso!");
-    setShowWhatsApp(true);
+    setShowQuiz(true);
   }
 
   async function handleReset() {
@@ -79,36 +79,13 @@ function AuthPage() {
     toast.success("Enviámos um link de recuperação para o seu e-mail.");
   }
 
-  if (showWhatsApp) {
+  if (showQuiz) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center px-5 py-10">
         <Link to="/" className="mb-8">
           <Logo size="lg" />
         </Link>
-        <div className="shadow-soft w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center">
-          <div className="bg-brand mx-auto grid h-14 w-14 place-items-center rounded-2xl text-primary-foreground">
-            <MessageCircle className="h-7 w-7" />
-          </div>
-          <h1 className="mt-5 text-2xl font-extrabold">Bem-vindo à RuJe IA 🎉</h1>
-          <p className="text-muted-foreground mt-2 text-sm">
-            A sua conta está pronta! Entre agora na nossa comunidade de WhatsApp para conversar com outros
-            estudantes, dar a sua opinião e ficar atento aos cursos com certificado.
-          </p>
-          <div className="mt-6 space-y-3">
-            <Button asChild className="w-full" size="lg">
-              <a
-                href="https://chat.whatsapp.com/CU2WmZIWDDvJURM2eqOtKT"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <MessageCircle className="h-4 w-4" /> Entrar na comunidade WhatsApp
-              </a>
-            </Button>
-            <Button asChild variant="outline" className="w-full">
-              <Link to="/painel">Continuar para o painel</Link>
-            </Button>
-          </div>
-        </div>
+        <SignupQuiz onFinish={() => navigate({ to: "/planos" })} />
       </div>
     );
   }
