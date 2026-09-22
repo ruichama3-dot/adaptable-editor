@@ -220,6 +220,20 @@ function NovoTrabalho() {
 
   return (
     <main className="mx-auto max-w-4xl px-5 py-8">
+      {busy && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/85 px-5 backdrop-blur">
+          <div className="shadow-soft w-full max-w-sm rounded-2xl border border-border bg-card p-8 text-center">
+            <Loader2 className="text-primary mx-auto h-10 w-10 animate-spin" />
+            <p className="mt-5 text-lg font-extrabold">A gerar o seu trabalho…</p>
+            <p className="text-muted-foreground mt-2 text-sm">
+              A IA está a escrever o documento completo. Pode demorar 1 a 3 minutos — não feche esta página.
+            </p>
+            <div className="mt-5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="bg-brand h-full w-1/3 animate-pulse rounded-full" />
+            </div>
+          </div>
+        </div>
+      )}
       <h1 className="text-3xl font-extrabold">Criar novo trabalho</h1>
       <p className="text-muted-foreground mt-1">Quanto mais completo o formulário, melhor o resultado.</p>
       {sample && (
