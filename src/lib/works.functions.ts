@@ -59,8 +59,9 @@ function startOfTodayISO() {
 
 /** Modelos reais da API pública do Google Gemini, por ordem de preferência. */
 const GEMINI_MODELS = [
+  "gemini-3.6-flash",
+  "gemini-3-flash-preview",
   "gemini-2.5-flash",
-  "gemini-2.0-flash",
   "gemini-flash-latest",
   "gemini-2.5-pro",
 ];
@@ -75,11 +76,13 @@ function readKeys() {
     env("LOVABLE_API_KEY"),
   ].filter(Boolean);
 
-  // Chaves da Google AI Studio começam por "AIza"; as do gateway Lovable por "sk_".
-  const geminiKey = all.find((k) => k.startsWith("AIza")) ?? "";
+  // Chaves da Google aceites: "AIza" (AI Studio) e "AQ." (tokens de acesso Gemini).
+  const geminiKey = all.find((k) => k.startsWith("AIza") || k.startsWith("AQ.")) ?? "";
+  // Chaves do gateway Lovable começam por "sk_".
   const gatewayKey = all.find((k) => k.startsWith("sk_")) ?? "";
   return { geminiKey, gatewayKey };
 }
+
 
 async function callGemini(prompt: string, apiKey: string): Promise<string> {
   const errors: string[] = [];
