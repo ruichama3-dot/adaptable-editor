@@ -180,46 +180,17 @@ export const generateWork = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => GenerateInput.parse(d))
   .handler(async ({ data, context }) => {
-    // Administradores têm acesso ilimitado (com verificação alternativa se o RPC falhar).
-    let isAdmin = false;
-    const { data: roleRpc, error: roleErr } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (roleErr) {
-      const { data: roleRows } = await context.supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", context.userId)
-        .eq("role", "admin");
-      isAdmin = (roleRows?.length ?? 0) > 0;
-    } else {
-      isAdmin = roleRpc === true;
-    }
+    // Acesso: administrador (ilimitado), subscrição activa ou pagamento aprovado.
+    const access = await resolveAccess(context.supabase, context.userId);
 
-    if (!isAdmin) {
-      const { data: subs, error: subErr } = await context.supabase
-        .from("subscriptions")
-        .select("daily_limit, expires_at")
-        .eq("user_id", context.userId)
-        .gt("expires_at", new Date().toISOString())
-        .order("expires_at", { ascending: false })
-        .limit(1);
-
-      if (subErr) {
-        throw new Error(
-          "Não foi possível confirmar o seu plano neste momento. Actualize a página e tente de novo.",
-        );
-      }
-
-      const active = subs?.[0];
-      if (!active) {
+    if (!access.isAdmin) {
+      if (!access.hasAccess) {
         throw new Error(
           "Precisa de um plano activo para criar trabalhos. Escolha um plano na página Planos.",
         );
       }
 
-      const limit = active.daily_limit ?? FREE_DAILY_LIMIT;
+      const limit = access.dailyLimit ?? FREE_DAILY_LIMIT;
 
       const { count } = await context.supabase
         .from("works")
