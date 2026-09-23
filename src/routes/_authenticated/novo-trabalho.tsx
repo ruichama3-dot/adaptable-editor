@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { generateWork } from "@/lib/works.functions";
-import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { getAccess } from "@/lib/access.functions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -122,19 +122,11 @@ function NovoTrabalho() {
   const [mode, setMode] = useState<"individual" | "grupo">("individual");
   const [refsMode, setRefsMode] = useState<"automatica" | "manual">("automatica");
 
-  const { isAdmin, isLoading: loadingRole } = useIsAdmin();
-
-  const { data: sub, isLoading: loadingSub } = useQuery({
-    queryKey: ["my-subscription", user.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("subscriptions")
-        .select("plan, daily_limit, expires_at")
-        .gt("expires_at", new Date().toISOString())
-        .order("expires_at", { ascending: false })
-        .limit(1);
-      return data?.[0] ?? null;
-    },
+  const fetchAccess = useServerFn(getAccess);
+  const { data: access, isLoading: loadingAccess } = useQuery({
+    queryKey: ["my-access", user.id],
+    queryFn: () => fetchAccess({ data: undefined }),
+    staleTime: 60 * 1000,
   });
 
   const { data: sample, isLoading: loadingSample } = useQuery({
@@ -198,11 +190,11 @@ function NovoTrabalho() {
     }
   }
 
-  if ((amostra && loadingSample) || loadingSub || loadingRole) {
+  if ((amostra && loadingSample) || loadingAccess) {
     return <main className="mx-auto max-w-4xl px-5 py-10 text-muted-foreground">A carregar…</main>;
   }
 
-  if (!isAdmin && !sub) {
+  if (access && !access.hasAccess) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-16 text-center">
         <h1 className="text-3xl font-extrabold">Precisa de um plano activo</h1>
