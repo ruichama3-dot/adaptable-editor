@@ -190,11 +190,11 @@ function NovoTrabalho() {
     }
   }
 
-  if ((amostra && loadingSample) || loadingSub || loadingRole) {
+  if ((amostra && loadingSample) || loadingAccess) {
     return <main className="mx-auto max-w-4xl px-5 py-10 text-muted-foreground">A carregar…</main>;
   }
 
-  if (!isAdmin && !sub) {
+  if (access && !access.hasAccess) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-16 text-center">
         <h1 className="text-3xl font-extrabold">Precisa de um plano activo</h1>
