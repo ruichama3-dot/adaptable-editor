@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth-guard";
 import { z } from "zod";
 import { FREE_DAILY_LIMIT } from "@/lib/plans";
+import { resolveAccess } from "@/lib/access";
 
 const GenerateInput = z.object({ workId: z.string().uuid() });
 
