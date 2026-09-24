@@ -32,7 +32,13 @@ export async function downloadPdf(title: string, html: string) {
     sheet.innerHTML = content;
     wrapper.appendChild(sheet);
   }
-  await html2pdf()
+  wrapper.style.position = "fixed";
+  wrapper.style.left = "0";
+  wrapper.style.top = "0";
+  wrapper.style.zIndex = "-1";
+  document.body.appendChild(wrapper);
+  try {
+    await html2pdf()
     .set({
       margin: 0,
       filename: `${safeName(title)}.pdf`,
@@ -53,5 +59,8 @@ export async function downloadPdf(title: string, html: string) {
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
     .from(wrapper)
-    .save();
+      .save();
+  } finally {
+    wrapper.remove();
+  }
 }
