@@ -29,7 +29,7 @@ export async function downloadPdf(title: string, html: string) {
 
   for (let index = 0; index < pages.length; index++) {
     const sheet = document.createElement("div");
-    sheet.innerHTML = pages[index];
+    sheet.innerHTML = pages[index] ?? "";
     // Render a single document sheet in an isolated frame, away from app theme tokens.
     const frame = document.createElement("iframe");
     frame.setAttribute("aria-hidden", "true");
