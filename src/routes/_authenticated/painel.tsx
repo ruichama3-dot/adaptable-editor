@@ -26,6 +26,8 @@ export const Route = createFileRoute("/_authenticated/painel")({
       { name: "description", content: "Os seus trabalhos, downloads, planos e estatísticas na RuJe IA." },
       { property: "og:title", content: "Painel | RuJe IA" },
       { property: "og:description", content: "Os seus trabalhos académicos num só lugar." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Painel,

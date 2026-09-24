@@ -18,6 +18,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Aceda à sua conta RuJe IA e crie trabalhos académicos com IA." },
       { property: "og:title", content: "Entrar ou criar conta | RuJe IA" },
       { property: "og:description", content: "Aceda à sua conta RuJe IA." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,

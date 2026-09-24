@@ -13,6 +13,8 @@ export const Route = createFileRoute("/_authenticated/perfil")({
       { name: "description", content: "Edite os seus dados de conta na RuJe IA." },
       { property: "og:title", content: "Perfil | RuJe IA" },
       { property: "og:description", content: "Edite os seus dados de conta." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Perfil,

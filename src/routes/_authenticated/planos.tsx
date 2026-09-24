@@ -17,6 +17,8 @@ export const Route = createFileRoute("/_authenticated/planos")({
       { name: "description", content: "Escolha o seu plano RuJe IA e pague por Emola ou M-Pesa." },
       { property: "og:title", content: "Planos e pagamento | RuJe IA" },
       { property: "og:description", content: "Planos semanais, de 14 e de 30 dias para criar trabalhos com IA." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Planos,

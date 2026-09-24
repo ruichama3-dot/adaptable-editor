@@ -14,6 +14,8 @@ export const Route = createFileRoute("/reset-password")({
       { name: "description", content: "Defina uma nova palavra-passe para a sua conta RuJe IA." },
       { property: "og:title", content: "Nova palavra-passe | RuJe IA" },
       { property: "og:description", content: "Defina uma nova palavra-passe." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ResetPassword,

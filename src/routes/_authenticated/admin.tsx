@@ -15,6 +15,8 @@ export const Route = createFileRoute("/_authenticated/admin")({
       { name: "description", content: "Gestão de utilizadores, trabalhos e pagamentos da RuJe IA." },
       { property: "og:title", content: "Painel de administração | RuJe IA" },
       { property: "og:description", content: "Todos os dados da plataforma RuJe IA num só lugar." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Admin,
