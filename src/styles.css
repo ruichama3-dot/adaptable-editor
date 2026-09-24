@@ -256,3 +256,8 @@
   }
 }
 
+/* Esconde o selo "Edit with Lovable" no site publicado */
+a[href*="lovable"] {
+  display: none !important;
+}
+
