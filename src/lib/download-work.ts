@@ -1,7 +1,7 @@
 import { splitPages } from "@/lib/doc-pages";
 
 function safeName(title: string) {
-  return (title.replace(/[<>:"/\\|?*\x00-\x1f]/g, "-").trim().slice(0, 100) || "trabalho");
+  return title.replace(/[<>:"/\\|?*\x00-\x1f]/g, "-").trim().slice(0, 100) || "trabalho";
 }
 
 export function downloadWord(title: string, html: string) {
@@ -20,47 +20,40 @@ export function downloadWord(title: string, html: string) {
 }
 
 export async function downloadPdf(title: string, html: string) {
-  // Load only when requested, so the document editor remains light on mobile.
-  const { default: html2pdf } = await import("html2pdf.js");
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ]);
+  const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pages = splitPages(html);
-  const wrapper = document.createElement("div");
-  wrapper.className = "doc-export";
-  wrapper.style.width = "794px";
-  for (const content of pages) {
+
+  for (let index = 0; index < pages.length; index++) {
     const sheet = document.createElement("div");
-    sheet.className = "doc-sheet";
-    sheet.innerHTML = content;
-    wrapper.appendChild(sheet);
+    sheet.innerHTML = pages[index];
+    // Render a single document sheet in an isolated frame, away from app theme tokens.
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.cssText = "position:fixed;left:0;top:0;width:794px;height:1123px;opacity:0;pointer-events:none;";
+    document.body.appendChild(frame);
+    try {
+      const frameDoc = frame.contentDocument;
+      if (!frameDoc) throw new Error("Não foi possível preparar o PDF.");
+      frameDoc.open();
+      frameDoc.write(`<!doctype html><html><head><style>*{box-sizing:border-box}html,body{margin:0;width:794px;background:#fff;color:#111}body{font:12pt/1.6 'Times New Roman',serif;padding:64px 72px}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}p{text-align:justify;margin:0 0 .8em}ul,ol{margin:0 0 .8em 1.4em}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:6px 8px}img{max-width:100%}</style></head><body>${sheet.innerHTML}</body></html>`);
+      frameDoc.close();
+      await Promise.all(Array.from(frameDoc.images).map((image) => image.decode().catch(() => undefined)));
+      const canvas = await html2canvas(frameDoc.body, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794 });
+      const image = canvas.toDataURL("image/jpeg", 0.95);
+      const pageHeight = 297;
+      const imageHeight = (canvas.height * 210) / canvas.width;
+      if (index) pdf.addPage();
+      for (let offset = 0; offset < imageHeight; offset += pageHeight) {
+        if (offset > 0) pdf.addPage();
+        pdf.addImage(image, "JPEG", 0, -offset, 210, imageHeight);
+      }
+    } finally {
+      frame.remove();
+    }
   }
-  wrapper.style.position = "fixed";
-  wrapper.style.left = "0";
-  wrapper.style.top = "0";
-  wrapper.style.zIndex = "-1";
-  document.body.appendChild(wrapper);
-  try {
-    await html2pdf()
-    .set({
-      margin: 0,
-      filename: `${safeName(title)}.pdf`,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        windowWidth: 1200,
-        onclone: (clonedDocument: Document) => {
-          // html2canvas cannot parse modern oklch theme tokens from the app shell.
-          for (const style of clonedDocument.querySelectorAll('style, link[rel="stylesheet"]')) style.remove();
-          const exportStyle = clonedDocument.createElement("style");
-          exportStyle.textContent = `*{box-sizing:border-box}body{margin:0;background:#fff;color:#111}.doc-export{width:794px;font:12pt/1.6 'Times New Roman',serif;color:#111;background:#fff}.doc-sheet{width:794px;min-height:1122px;padding:64px 72px;background:#fff;break-inside:avoid}.doc-sheet:not(:first-child){break-before:page;page-break-before:always}.doc-sheet h1{font-size:18pt}.doc-sheet h2{font-size:15pt}.doc-sheet h3{font-size:13pt}.doc-sheet p{text-align:justify;margin:0 0 .8em}.doc-sheet ul,.doc-sheet ol{margin:0 0 .8em 1.4em}.doc-sheet table{width:100%;border-collapse:collapse}.doc-sheet td,.doc-sheet th{border:1px solid #999;padding:6px 8px}.doc-sheet img{max-width:100%}`;
-          clonedDocument.head.appendChild(exportStyle);
-        },
-      },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    })
-    .from(wrapper)
-      .save();
-  } finally {
-    wrapper.remove();
-  }
+  pdf.save(`${safeName(title)}.pdf`);
 }
