@@ -9,6 +9,7 @@
 - [x] Quiz pós-registo → planos; overlay "A gerar o seu trabalho…"
 
 ## Em curso
+- [x] Descarregar trabalho abaixo das páginas em PDF ou Word, em telemóvel e computador
 - [ ] Esconder selo "Edit with Lovable" (CSS adicionado a styles.css — definição oficial exige plano Pro)
 - [ ] Typecheck e verificação final dos fluxos de acesso
 

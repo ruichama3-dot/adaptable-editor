@@ -23,6 +23,8 @@ export const Route = createFileRoute("/_authenticated/novo-trabalho")({
       { name: "description", content: "Preencha os dados académicos e deixe a IA escrever o seu trabalho." },
       { property: "og:title", content: "Criar novo trabalho | RuJe IA" },
       { property: "og:description", content: "A IA escreve o seu trabalho académico completo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: NovoTrabalho,

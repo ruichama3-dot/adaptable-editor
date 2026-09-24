@@ -12,6 +12,8 @@ export const Route = createFileRoute("/_authenticated/amostra/$id")({
       { name: "description", content: "Veja um trabalho modelo completo e crie o seu no mesmo formato." },
       { property: "og:title", content: "Trabalho de amostra | RuJe IA" },
       { property: "og:description", content: "Modelo de trabalho académico completo da RuJe IA." },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Amostra,

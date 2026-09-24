@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { DocPages, type DocPagesHandle } from "@/components/DocPages";
+import { DownloadWorkButton } from "@/components/DownloadWorkButton";
 import { joinPages, splitPages } from "@/lib/doc-pages";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -18,8 +19,6 @@ import {
   Image as ImageIcon,
   Table as TableIcon,
   Save,
-  FileDown,
-  FileText,
   Share2,
   FilePlus2,
 } from "lucide-react";
@@ -31,6 +30,8 @@ export const Route = createFileRoute("/_authenticated/trabalho/$id")({
       { name: "description", content: "Edite, formate e exporte o seu trabalho académico página a página." },
       { property: "og:title", content: "Editor de trabalho | RuJe IA" },
       { property: "og:description", content: "Edite e exporte o seu trabalho em PDF ou Word." },
+      { property: "og:type", content: "article" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Editor,
@@ -86,20 +87,8 @@ function Editor() {
     toast.success("Nova página adicionada no fim do documento.");
   }
 
-  function exportDocx() {
+  function recordDownload() {
     if (!work) return;
-    const pages = splitPages(currentHtml());
-    const body = pages
-      .map((p, i) => `<div${i < pages.length - 1 ? ' style="page-break-after:always"' : ""}>${p}</div>`)
-      .join("");
-    const doc = `<html xmlns:w="urn:schemas-microsoft-com:office:word"><head><meta charset="utf-8"><style>body{font-family:'Times New Roman',serif;font-size:12pt;line-height:1.6}p{text-align:justify}table{border-collapse:collapse;width:100%}td,th{border:1px solid #999;padding:6px}</style></head><body>${body}</body></html>`;
-    const blob = new Blob(["\ufeff", doc], { type: "application/msword" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${work.title}.doc`;
-    a.click();
-    URL.revokeObjectURL(url);
     void supabase
       .from("works")
       .update({ download_count: (work.download_count ?? 0) + 1 })
@@ -148,12 +137,6 @@ function Editor() {
         <div className="flex flex-wrap gap-2">
           <Button onClick={save} disabled={saving}>
             <Save className="h-4 w-4" /> Guardar
-          </Button>
-          <Button variant="outline" onClick={() => window.print()}>
-            <FileDown className="h-4 w-4" /> PDF
-          </Button>
-          <Button variant="outline" onClick={exportDocx}>
-            <FileText className="h-4 w-4" /> Word
           </Button>
           <Button variant="outline" onClick={share}>
             <Share2 className="h-4 w-4" /> Partilhar
@@ -216,6 +199,11 @@ function Editor() {
       </div>
 
       {html !== null && <DocPages ref={docRef} html={html} editable version={version} />}
+      {html !== null && work && (
+        <div className="mt-6 flex justify-center print:hidden">
+          <DownloadWorkButton title={work.title} getHtml={currentHtml} onDownloaded={recordDownload} />
+        </div>
+      )}
       <p className="text-muted-foreground mt-4 text-xs print:hidden">
         Cada folha acima é uma página do documento — o PDF e o Word mantêm esta separação.
       </p>
