@@ -223,6 +223,16 @@
   text-align: right;
 }
 
+.doc-export .doc-sheet {
+  box-sizing: border-box;
+  min-height: 1122px;
+  break-inside: avoid;
+}
+.doc-export .doc-sheet:not(:first-child) {
+  break-before: page;
+  page-break-before: always;
+}
+
 @media print {
   body * {
     visibility: hidden;

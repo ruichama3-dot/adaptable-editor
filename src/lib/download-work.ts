@@ -41,7 +41,6 @@ export async function downloadPdf(title: string, html: string) {
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 1200 },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css"], before: ".doc-sheet:not(:first-child)" },
       })
       .from(wrapper)
       .save();
