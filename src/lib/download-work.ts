@@ -37,7 +37,19 @@ export async function downloadPdf(title: string, html: string) {
       margin: 0,
       filename: `${safeName(title)}.pdf`,
       image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 1200 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        windowWidth: 1200,
+        onclone: (clonedDocument: Document) => {
+          // html2canvas cannot parse modern oklch theme tokens from the app shell.
+          for (const style of clonedDocument.querySelectorAll('style, link[rel="stylesheet"]')) style.remove();
+          const exportStyle = clonedDocument.createElement("style");
+          exportStyle.textContent = `*{box-sizing:border-box}body{margin:0;background:#fff;color:#111}.doc-export{width:794px;font:12pt/1.6 'Times New Roman',serif;color:#111;background:#fff}.doc-sheet{width:794px;min-height:1122px;padding:64px 72px;background:#fff;break-inside:avoid}.doc-sheet:not(:first-child){break-before:page;page-break-before:always}.doc-sheet h1{font-size:18pt}.doc-sheet h2{font-size:15pt}.doc-sheet h3{font-size:13pt}.doc-sheet p{text-align:justify;margin:0 0 .8em}.doc-sheet ul,.doc-sheet ol{margin:0 0 .8em 1.4em}.doc-sheet table{width:100%;border-collapse:collapse}.doc-sheet td,.doc-sheet th{border:1px solid #999;padding:6px 8px}.doc-sheet img{max-width:100%}`;
+          clonedDocument.head.appendChild(exportStyle);
+        },
+      },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
     })
     .from(wrapper)
