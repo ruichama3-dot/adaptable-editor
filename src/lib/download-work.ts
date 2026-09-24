@@ -39,10 +39,10 @@ export async function downloadPdf(title: string, html: string) {
       const frameDoc = frame.contentDocument;
       if (!frameDoc) throw new Error("Não foi possível preparar o PDF.");
       frameDoc.open();
-      frameDoc.write(`<!doctype html><html><head><style>*{box-sizing:border-box}html,body{margin:0;width:794px;background:#fff;color:#111}body{font:12pt/1.6 'Times New Roman',serif;padding:64px 72px}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}p{text-align:justify;margin:0 0 .8em}ul,ol{margin:0 0 .8em 1.4em}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:6px 8px}img{max-width:100%}</style></head><body>${sheet.innerHTML}</body></html>`);
+      frameDoc.write(`<!doctype html><html><head><style>*{box-sizing:border-box}html,body{margin:0;width:794px;background:#fff;color:#111}body{font:12pt/1.6 'Times New Roman',serif;padding:64px 72px;min-height:1122px}h1{font-size:18pt}h2{font-size:15pt}h3{font-size:13pt}p{text-align:justify;margin:0 0 .8em}ul,ol{margin:0 0 .8em 1.4em}table{width:100%;border-collapse:collapse}td,th{border:1px solid #999;padding:6px 8px}img{max-width:100%}</style></head><body>${sheet.innerHTML}</body></html>`);
       frameDoc.close();
       await Promise.all(Array.from(frameDoc.images).map((image) => image.decode().catch(() => undefined)));
-      const canvas = await html2canvas(frameDoc.body, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794 });
+      const canvas = await html2canvas(frameDoc.body, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794, height: Math.max(1122, frameDoc.body.scrollHeight) });
       const pixelsPerPage = Math.floor((canvas.width * 297) / 210);
       for (let start = 0; start < canvas.height; start += pixelsPerPage) {
         const remaining = canvas.height - start;
