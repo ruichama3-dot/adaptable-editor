@@ -25,26 +25,21 @@ export async function downloadPdf(title: string, html: string) {
   const pages = splitPages(html);
   const wrapper = document.createElement("div");
   wrapper.className = "doc-export";
-  wrapper.style.cssText = "width:794px;position:absolute;left:-10000px;top:0;";
+  wrapper.style.width = "794px";
   for (const content of pages) {
     const sheet = document.createElement("div");
     sheet.className = "doc-sheet";
     sheet.innerHTML = content;
     wrapper.appendChild(sheet);
   }
-  document.body.appendChild(wrapper);
-  try {
-    await html2pdf()
-      .set({
-        margin: 0,
-        filename: `${safeName(title)}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 1200 },
-        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      })
-      .from(wrapper)
-      .save();
-  } finally {
-    wrapper.remove();
-  }
+  await html2pdf()
+    .set({
+      margin: 0,
+      filename: `${safeName(title)}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 1200 },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    })
+    .from(wrapper)
+    .save();
 }
