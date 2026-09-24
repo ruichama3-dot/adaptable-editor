@@ -43,13 +43,17 @@ export async function downloadPdf(title: string, html: string) {
       frameDoc.close();
       await Promise.all(Array.from(frameDoc.images).map((image) => image.decode().catch(() => undefined)));
       const canvas = await html2canvas(frameDoc.body, { scale: 2, useCORS: true, backgroundColor: "#ffffff", windowWidth: 794 });
-      const image = canvas.toDataURL("image/jpeg", 0.95);
-      const pageHeight = 297;
-      const imageHeight = (canvas.height * 210) / canvas.width;
-      if (index) pdf.addPage();
-      for (let offset = 0; offset < imageHeight; offset += pageHeight) {
-        if (offset > 0) pdf.addPage();
-        pdf.addImage(image, "JPEG", 0, -offset, 210, imageHeight);
+      const pixelsPerPage = Math.floor((canvas.width * 297) / 210);
+      for (let start = 0; start < canvas.height; start += pixelsPerPage) {
+        const remaining = canvas.height - start;
+        if (remaining < 12) break; // canvas rounding must not create a blank trailing page
+        const height = Math.min(pixelsPerPage, remaining);
+        const slice = document.createElement("canvas");
+        slice.width = canvas.width;
+        slice.height = height;
+        slice.getContext("2d")?.drawImage(canvas, 0, start, canvas.width, height, 0, 0, canvas.width, height);
+        if (index || start) pdf.addPage();
+        pdf.addImage(slice.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 210, (height * 210) / canvas.width);
       }
     } finally {
       frame.remove();
